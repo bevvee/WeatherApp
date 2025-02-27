@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta name="format-detection" content="telephone=no">
+    <meta name="msapplication-tap-highlight" content="no">
+    <meta name="viewport" content="initial-scale=1, width=device-width, viewport-fit=cover">
+    <meta name="color-scheme" content="light dark">
+    <link rel="stylesheet" href="css/index.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.1/js/all.min.js"
+        integrity="sha512-1JkMy1LR9bTo3psH+H4SV5bO2dFylgOy+UJhMus1zF4VEFuZVu5lsi4I6iIndE4N9p01z1554ZDcvMSjMaqCBQ=="
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <title>Meteo</title>
+</head>
+
+<body>
+    <div class="loader"><i class="fa-solid fa-spinner"></i></div>
+    <main class="container">
+        <div class="head">
+            <div class="Vile">
+                <div>
+                    <h1 class="temperature">--°</h1>
+                    <h1 class="city">Loading...</h1>
+                </div>
+                <div>
+                    <p class="temp-range">--°/--° Feels like --°</p>
+                    <p class="update-time">--:--</p>
+                </div>
+            </div>
+            <div class="villeImg">
+                <img class="weather-icon" src="./img/sun.png" alt="Weather Icon" width="80px" />
+            </div>
+        </div>
+
+        <div class="head2">
+            <table class="hourly-table">
+            </table>
+        </div>
+
+        <div class="content">
+            <table class="daily-table">
+            </table>
+        </div>
+
+        <div class="footer">
+            <div>
+                <span>Sunrise</span>
+                <span class="sunrise-time">--:--</span>
+                <img src="./img/sunrise.png" alt="Sunrise Icon" width="50px" />
+            </div>
+            <div>
+                <span>Sunset</span>
+                <span class="sunset-time">--:--</span>
+                <img src="./img/sunset.png" alt="Sunset Icon" width="50px" />
+            </div>
+        </div>
+    </main>
+    <script src="cordova.js"></script>
+
+    <script src="js/index.js"></script>
+</body>
+
+</html>

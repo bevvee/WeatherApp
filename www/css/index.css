@@ -1,0 +1,98 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background-color: #bbdff9;
+  color: white;
+  font-family: Arial, sans-serif;
+  line-height: 1.5;
+}
+.loader {
+  color: black;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+}
+.loader {
+  font-size: 2rem;
+  animation: spin 1s linear infinite;
+}
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+.container{
+  display: none;
+}
+main {
+  max-width: 800px;
+  margin: auto;
+  padding: 10px;
+}
+
+
+.head {
+  display: flex;
+  justify-content: space-around;
+  padding: 20px;
+}
+
+.head .Vile div {
+  margin-bottom: 20px;
+}
+
+.head .villeImg img {
+  width: 80px;
+}
+
+.head2,
+.content {
+  border: 1px solid #bbdff9;
+  border-radius: 15px;
+  margin: 10px auto;
+  padding: 10px;
+  overflow-x: scroll;
+  scrollbar-width: none;
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.head2 table,
+.content table {
+  width: 100%;
+  text-align: center;
+}
+
+.head2 table td,
+.content table td {
+  padding: 10px;
+}
+
+.footer {
+  border: 1px solid #bbdff9;
+  border-radius: 15px;
+  margin: 10px auto;
+  padding: 10px;
+  display: flex;
+  justify-content: space-around;
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.footer div {
+  display: flex;
+  flex-direction: column;
+  text-align: center;
+}
+
+.daily-table td:nth-child(2) {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: nowrap;
+}
