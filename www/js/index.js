@@ -1,4 +1,8 @@
 document.addEventListener("deviceready", function () {
+    setTimeout(() => {
+        document.querySelector(".custom-splash").style.display = "none";
+        document.querySelector(".container").style.display = "block";
+    }, 10000);
     var permissions = cordova.plugins.permissions;
     permissions.checkPermission(permissions.ACCESS_FINE_LOCATION, function (status) {
         if (status.hasPermission) {
@@ -8,28 +12,50 @@ document.addEventListener("deviceready", function () {
                 if (status.hasPermission) {
                     getLocation();
                 } else {
-                    alert("Location permission denied. Please enable it in settings.");
+                    alert("Location permission denied. Loading last saved location.");
+                    loadLastLocation();
                 }
             }, () => {
                 alert("Error requesting location permission.");
+                loadLastLocation();
             });
         }
     }, () => {
         alert("Error checking location permission.");
     });
 });
+function saveLastLocation(latitude, longitude) {
+    localStorage.setItem("lastLatitude", latitude);
+    localStorage.setItem("lastLongitude", longitude);
+}
 
 function getLocation() {
     navigator.geolocation.getCurrentPosition(
         (position) => {
             var latitude = position.coords.latitude;
             var longitude = position.coords.longitude;
+            saveLastLocation(latitude, longitude);
             getCityName(latitude, longitude);
         },
-        function () {
-            alert("Unable to get location. Please enable location services.");
+        function (error) {
+            alert("Unable to get location: " + error.message + ". Loading last saved location.");
+            loadLastLocation();
+        },
+        {
+            timeout: 10000,
+            maximumAge: 60000,
+            enableHighAccuracy: true
         }
-    );
+    )
+}
+function loadLastLocation() {
+    const latitude = localStorage.getItem("lastLatitude");
+    const longitude = localStorage.getItem("lastLongitude");
+    if (latitude && longitude) {
+        fetchWeatherData(latitude, longitude, getCityName(latitude, longitude));
+    } else {
+        alert("No saved location available. Please enable location services.");
+    }
 }
 
 function getCityName(latitude, longitude) {
