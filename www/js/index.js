@@ -1,59 +1,79 @@
-document.addEventListener("deviceready", async () => {
-    try {
-        const permissions = cordova.plugins.permissions;
-        await requestLocationPermission(permissions);
-        getLocation();
-    } catch (error) {
-        alert(error.message);
-    }
-});
-
-async function requestLocationPermission(permissions) {
-    return new Promise((resolve, reject) => {
-        permissions.checkPermission(permissions.ACCESS_FINE_LOCATION, (status) => {
-            if (status.hasPermission) return resolve();
-
-            permissions.requestPermission(permissions.ACCESS_FINE_LOCATION, (status) => {
-                status.hasPermission ? resolve() : reject(new Error("Location permission denied. Please enable it in settings."));
-            }, () => reject(new Error("Error requesting location permission.")));
-        });
+document.addEventListener("deviceready", function () {
+    var permissions = cordova.plugins.permissions;
+    permissions.checkPermission(permissions.ACCESS_FINE_LOCATION, function (status) {
+        if (status.hasPermission) {
+            getLocation();
+        } else {
+            permissions.requestPermission(permissions.ACCESS_FINE_LOCATION, function (status) {
+                if (status.hasPermission) {
+                    getLocation();
+                } else {
+                    alert("Location permission denied. Please enable it in settings.");
+                }
+            }, () => {
+                alert("Error requesting location permission.");
+            });
+        }
+    }, () => {
+        alert("Error checking location permission.");
     });
-}
+});
 
 function getLocation() {
     navigator.geolocation.getCurrentPosition(
-        ({ coords: { latitude, longitude } }) => fetchWeatherData(latitude, longitude),
-        (error) => alert("Unable to retrieve location. Enable location services."),
-        { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+        (position) => {
+            var latitude = position.coords.latitude;
+            var longitude = position.coords.longitude;
+            getCityName(latitude, longitude);
+        },
+        function () {
+            alert("Unable to get location. Please enable location services.");
+        }
     );
 }
 
-async function fetchWeatherData(latitude, longitude) {
-    try {
-        const [weatherData, cityName] = await Promise.all([
-            fetchJson(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current_weather=true&hourly=temperature_2m,precipitation_probability,weathercode&daily=temperature_2m_max,temperature_2m_min,sunrise,sunset,weathercode,precipitation_hours&timezone=auto`),
-            getCityName(latitude, longitude),
-        ]);
+function getCityName(latitude, longitude) {
+    var xhr = new XMLHttpRequest();
+    xhr.open("GET", `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`);
+    xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+            try {
+                var data = JSON.parse(xhr.responseText);
+                var city = data.address && (data.address.city || data.address.town || data.address.village || data.address.country);
+            } catch (e) {
+                city = "Unknown Location";
+            }
+        }
+        fetchWeatherData(latitude, longitude, city);
 
-        updateWeatherUI(weatherData, cityName);
-    } catch (error) {
-        console.error("Error fetching weather data:", error);
-    }
+    };
+    xhr.onerror = () => {
+        fetchWeatherData(latitude, longitude, "Unknown Location");
+    };
+    xhr.send();
 }
 
-async function fetchJson(url) {
-    const response = await fetch(url);
-    if (!response.ok) throw new Error("Failed to fetch data");
-    return response.json();
-}
+function fetchWeatherData(latitude, longitude, cityName) {
+    var xhr = new XMLHttpRequest();
 
-async function getCityName(latitude, longitude) {
-    try {
-        const data = await fetchJson(`https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`);
-        return data.address?.city || data.address?.town || data.address?.village || "Unknown Location";
-    } catch {
-        return "Unknown Location";
-    }
+    xhr.open("GET", `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current_weather=true&hourly=temperature_2m,precipitation_probability,weathercode&daily=temperature_2m_max,temperature_2m_min,sunrise,sunset,weathercode,precipitation_hours&timezone=auto`);
+    xhr.onload = function () {
+
+        if (xhr.status >= 200 && xhr.status < 300) {
+            try {
+                var weatherData = JSON.parse(xhr.responseText);
+                updateWeatherUI(weatherData, cityName);
+            } catch (e) {
+                alert("Invalid JSON response.");
+            }
+        } else {
+            alert("Weather request failed with status " + xhr.status);
+        }
+    };
+    xhr.onerror = function () {
+        alert("Network error during weather request.");
+    };
+    xhr.send();
 }
 
 function updateWeatherUI(data, city) {
@@ -62,7 +82,7 @@ function updateWeatherUI(data, city) {
     updateElement(".city", city);
     updateElement(".temp-range", `${Math.round(daily.temperature_2m_max[0])}°/${Math.round(daily.temperature_2m_min[0])}° Feels like ${Math.round(current_weather.temperature)}°`);
     updateElement(".update-time", new Date(current_weather.time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }));
-    updateElement(".weather-icon", `./img/${getWeatherIcon(current_weather.weathercode)}.png`, "src");
+    updateElement(".weather-icon", `./img/${current_weather.weathercode}.png`, "src");
 
     updateElement(".sunrise-time", formatTime(daily.sunrise[0]));
     updateElement(".sunset-time", formatTime(daily.sunset[0]));
@@ -85,7 +105,7 @@ function generateTableRows(hourly, startHour) {
     let rows = ["<tr>", "<tr>", "<tr>", "<tr>"];
     for (let i = startHour; i < 24; i++) {
         rows[0] += `<td>${formatTime(hourly.time[i])}</td>`;
-        rows[1] += `<td><img src="./img/${getWeatherIcon(hourly.weathercode[i])}.png" width="50px" /></td>`;
+        rows[1] += `<td><img src="./img/${hourly.weathercode[i]}.png" width="50px" /></td>`;
         rows[2] += `<td>${Math.round(hourly.temperature_2m[i])}°</td>`;
         rows[3] += `<td><img src="./img/water.png" width="15px" /> ${hourly.precipitation_probability[i]}%</td>`;
     }
@@ -106,17 +126,6 @@ function updateDailyForecast(daily) {
     `).join("")
 }
 
-
-function getWeatherIcon(code) {
-    const icons = {
-        0: "sun", 1: "partly-cloudy", 2: "cloudy", 3: "overcast",
-        45: "fog", 48: "fog", 51: "drizzle", 53: "drizzle", 55: "drizzle",
-        61: "rain", 63: "rain", 65: "rain", 80: "showers", 81: "showers", 82: "showers",
-        95: "storm", 96: "storm", 99: "storm"
-    };
-    return icons[code] || "sun";
-}
-
 function updateBackground(code) {
     const colors = {
         0: "#87CEEB", 1: "#B0C4DE", 2: "#B0C4DE", 3: "#B0C4DE",
@@ -130,8 +139,12 @@ function updateBackground(code) {
 function updateElement(selector, content, attr = "text") {
     const element = document.querySelector(selector);
     if (element) {
-        if (attr === "text") element.textContent = content;
-        else element.setAttribute(attr, content);
+        if (attr === "text") {
+            element.textContent = content;
+        }
+        else {
+            element.setAttribute(attr, content);
+        }
     }
 }
 
